@@ -1,0 +1,199 @@
+name: die-yield-calculator
+version: 1.0.0
+type: cursor-directive
+description: |
+  Build a full-featured Die Yield Calculator inspired by SemiAnalysis.
+  Use Next.js (App Router), ShadCN/UI, Tailwind, MCP, & Vercel-style UI.
+  Must include all semiconductor math, formulas, UI components, and explanations.
+
+instructions: |
+  ###########################################################################
+  # 1. PROJECT OVERVIEW
+  ###########################################################################
+  Build a production-grade **Die Yield Calculator** web app.
+
+  Requirements:
+    - Framework: Next.js (App Router + TypeScript)
+    - UI System: shadcn/ui ONLY
+    - Styling: TailwindCSS
+    - Interaction: MCP tools where needed
+    - Theme: Premium Vercel-style (black & white, minimal, elegant)
+    - UX: Fully responsive, smooth animations, real-time calculation updates
+    - Accuracy: 100% correct semiconductor formulas (same as SemiAnalysis)
+
+  Folder Structure:
+    app/
+      page.tsx
+      components/
+        calculator-form.tsx
+        results-card.tsx
+        info-modal.tsx
+      lib/
+        formulas.ts
+        types.ts
+      styles/
+
+  ###########################################################################
+  # 2. REQUIRED FEATURES (MUST MATCH SEMIANALYSIS DIE-YIELD CALCULATOR)
+  ###########################################################################
+
+  Inputs The User MUST Be Able To Provide:
+    - Wafer Diameter (mm) — presets: 150 / 200 / 300 + custom
+    - Die Width (mm)
+    - Die Height (mm)
+    - Edge Exclusion (mm) — default 3mm
+    - Defect Density D0 (defects per cm²)
+    - Advanced Settings (toggle):
+        - Scribe Line (µm)
+        - Reticle Limit
+        - Yield Model Selector:
+            - Poisson (default)
+            - Murphy
+            - Bose-Einstein
+
+  Outputs the Calculator MUST Show:
+    - Wafer Area (mm² + cm²)
+    - Die Area (mm² + cm²)
+    - Gross Dies Per Wafer (GDW)
+    - Usable/Effective Dies
+    - Yield % (Poisson model)
+    - Net Functional Dies
+    - Optional: Cost per die (if wafer cost input added)
+
+  ###########################################################################
+  # 3. FORMULAS (STORE IN lib/formulas.ts)
+  ###########################################################################
+
+  ## Wafer Area
+  # diameter D in mm
+  wafer_area_mm2 = π * (D/2)^2
+
+  ## Die Area
+  die_area_mm2 = width_mm * height_mm
+
+  ## Convert die area to cm² for yield model
+  die_area_cm2 = die_area_mm2 / 100
+
+  ## Gross Dies Per Wafer (ideal, no edge loss)
+  gross_dies = (π * (D/2)^2) / die_area_mm2
+
+  ## Edge Loss Correction (industry approximate)
+  usable_dies = gross_dies - (π * D) / (sqrt(2 * die_area_mm2))
+
+  ## Poisson Yield Model
+  yield = exp(-D0 * die_area_cm2)
+
+  ## Net Functional Dies
+  net_dies = usable_dies * yield
+
+  ###########################################################################
+  # 4. UI GUIDELINES — VERCEL BLACK & WHITE THEME
+  ###########################################################################
+  Global Look:
+    - Background: black (#000)
+    - Text: white with opacity variations
+    - Cards: neutral-900 with white/neutral-800 borders
+    - Borders: thin, soft, subtle (border-neutral-800)
+    - Shadows: mild white glow
+    - Font: Inter, system default
+    - Overall: minimal, elegant, engineering-grade
+
+  Main Container:
+    - max-w-3xl
+    - mx-auto
+    - py-20
+    - px-6
+
+  Components:
+    - Use ONLY shadcn/ui:
+        - Card
+        - Input
+        - Button
+        - Select
+        - Dialog
+        - Tooltip
+        - Switch
+        - Separator
+
+  UX Requirements:
+    - Realtime calculation on input
+    - Animated number updates
+    - Tooltip explanations
+    - “Advanced Settings” collapsible section
+    - Full mobile responsiveness
+
+  ###########################################################################
+  # 5. COMPONENTS AND RESPONSIBILITIES
+  ###########################################################################
+
+  components/calculator-form.tsx:
+    - Controlled form with all inputs
+    - Uses shadcn/ui components
+    - On change → recalc formulas
+    - Emits results to parent
+
+  components/results-card.tsx:
+    - Display results in beautiful grid
+    - Show:
+        - Wafer area
+        - Die area
+        - Gross dies
+        - Usable dies
+        - Yield %
+        - Net dies
+    - Include tooltips for each metric
+
+  components/info-modal.tsx:
+    - Provide simple explanations of:
+        - What is a wafer?
+        - What is a die?
+        - Why defect density matters
+        - Yield model explanation
+        - All formulas
+
+  ###########################################################################
+  # 6. CODE REQUIREMENTS
+  ###########################################################################
+  - Use TypeScript everywhere.
+  - No inline CSS; use Tailwind.
+  - No untyped JS.
+  - Components must be modular.
+  - Formulas must live in lib/formulas.ts.
+  - Keep strict math accuracy.
+  - Recompute results efficiently.
+  - Graphical wafer map can be added later.
+
+  ###########################################################################
+  # 7. MCP USAGE GUIDELINES FOR CURSOR
+  ###########################################################################
+  Cursor Should:
+    - Auto-generate Next.js components following the structure.
+    - Prevent removal of formulas unless explicitly instructed.
+    - Maintain Vercel-style UI theme.
+    - Enforce shadcn/ui usage.
+    - Keep strict TypeScript.
+    - Suggest improvements when calculations touch performance.
+    - Maintain domain correctness (semiconductor math must be accurate).
+
+  ###########################################################################
+  # 8. FUTURE EXPANSION (OPTIONAL)
+  ###########################################################################
+  - Add Murphy + Bose-Einstein yield models.
+  - Add wafer map visualization (SVG grid).
+  - Add cost-modeling section (wafer cost → cost per good die).
+  - Add sensitivity sliders:
+      - Defect density sweep
+      - Die size sweep
+
+  ###########################################################################
+  # 9. FINAL INSTRUCTIONS TO CURSOR (MOST IMPORTANT)
+  ###########################################################################
+  Cursor MUST follow ALL these rules:
+    - DO NOT simplify formulas.
+    - DO NOT remove any calculations.
+    - DO NOT use any UI library other than shadcn/ui.
+    - Follow dark black & white Vercel theme.
+    - Maintain all structure exactly as defined.
+    - Ensure real-time, accurate calculation.
+    - Produce production-quality code only.
+
