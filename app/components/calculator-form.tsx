@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, Sliders, Disc, Grid, Maximize, AlertCircle, ChevronDown } from 'lucide-react';
 import { CalculatorInputs, YieldModel } from '../lib/types';
 import { cn } from '@/lib/utils';
@@ -20,10 +20,29 @@ interface CalculatorFormProps {
 export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeField, setActiveField] = useState<string | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleChange = (field: keyof CalculatorInputs, value: number | YieldModel) => {
-    onInputChange({ ...inputs, [field]: value });
-  };
+  const handleChange = useCallback((field: keyof CalculatorInputs, value: number | YieldModel) => {
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // For die dimensions, debounce to prevent excessive recalculations
+    if (field === 'dieWidth' || field === 'dieHeight') {
+      // Apply minimum constraint
+      const minDieSize = 0.1;
+      const numValue = typeof value === 'number' ? Math.max(minDieSize, value) : value;
+      
+      // Debounce by 300ms
+      debounceTimerRef.current = setTimeout(() => {
+        onInputChange({ ...inputs, [field]: numValue });
+      }, 300);
+    } else {
+      // Immediate update for other fields
+      onInputChange({ ...inputs, [field]: value });
+    }
+  }, [inputs, onInputChange]);
 
   return (
     <Card className="overflow-hidden border-white/[0.08] bg-black/40 backdrop-blur-xl">
@@ -38,10 +57,10 @@ export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
           Configure wafer and die properties
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-8 pt-8 px-6">
+      <CardContent className="space-y-6 sm:space-y-8 pt-6 sm:pt-8 px-4 sm:px-6">
         
         {/* Section: Wafer Properties */}
-        <div className="space-y-5 group">
+        <div className="space-y-4 sm:space-y-5 group">
           <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider flex items-center gap-2 select-none">
             <Disc className="h-3.5 w-3.5" /> Wafer Settings
           </h4>
@@ -49,19 +68,19 @@ export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label htmlFor="waferDiameter" className="text-sm font-medium text-neutral-200">Wafer Diameter (mm)</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-3.5 w-3.5 text-neutral-600 cursor-help hover:text-white transition-colors" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Standard sizes: 150mm, 200mm, 300mm</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="cursor-help">
+                    <Info className="h-3.5 w-3.5 text-neutral-600 hover:text-white transition-colors" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Standard sizes: 150mm, 200mm, 300mm</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {[150, 200, 300].map((size) => (
                 <button
                   key={size}
@@ -101,33 +120,41 @@ export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
         <Separator className="bg-white/[0.04]" />
 
         {/* Section: Die Dimensions */}
-        <div className="space-y-5 group">
+        <div className="space-y-4 sm:space-y-5 group">
           <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider flex items-center gap-2 select-none">
             <Grid className="h-3.5 w-3.5" /> Die Dimensions
           </h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-3">
-              <Label htmlFor="dieWidth" className="text-sm font-medium text-neutral-200">Die Width (mm)</Label>
+              <Label htmlFor="dieWidth" className="text-sm font-medium text-neutral-200">
+                Die Width (mm)
+                <span className="ml-1 text-xs text-neutral-500">(min: 0.1)</span>
+              </Label>
               <Input
                 id="dieWidth"
                 type="number"
                 step="0.1"
+                min="0.1"
                 value={inputs.dieWidth}
-                onChange={(e) => handleChange('dieWidth', parseFloat(e.target.value) || 0)}
+                onChange={(e) => handleChange('dieWidth', parseFloat(e.target.value) || 0.1)}
                 onFocus={() => setActiveField('dieWidth')}
                 onBlur={() => setActiveField(null)}
                 className={cn("transition-all duration-300", activeField === 'dieWidth' && "scale-[1.01]")}
               />
             </div>
             <div className="space-y-3">
-              <Label htmlFor="dieHeight" className="text-sm font-medium text-neutral-200">Die Height (mm)</Label>
+              <Label htmlFor="dieHeight" className="text-sm font-medium text-neutral-200">
+                Die Height (mm)
+                <span className="ml-1 text-xs text-neutral-500">(min: 0.1)</span>
+              </Label>
               <Input
                 id="dieHeight"
                 type="number"
                 step="0.1"
+                min="0.1"
                 value={inputs.dieHeight}
-                onChange={(e) => handleChange('dieHeight', parseFloat(e.target.value) || 0)}
+                onChange={(e) => handleChange('dieHeight', parseFloat(e.target.value) || 0.1)}
                 onFocus={() => setActiveField('dieHeight')}
                 onBlur={() => setActiveField(null)}
                 className={cn("transition-all duration-300", activeField === 'dieHeight' && "scale-[1.01]")}
@@ -139,25 +166,25 @@ export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
         <Separator className="bg-white/[0.04]" />
 
         {/* Section: Constraints */}
-        <div className="space-y-5 group">
+        <div className="space-y-4 sm:space-y-5 group">
           <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider flex items-center gap-2 select-none">
             <Maximize className="h-3.5 w-3.5" /> Constraints & Defects
           </h4>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Label htmlFor="edgeExclusion" className="text-sm font-medium text-neutral-200">Edge Exclusion (mm)</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 text-neutral-600 cursor-help hover:text-white transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Unusable edge area around wafer perimeter</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="cursor-help">
+                      <Info className="h-3.5 w-3.5 text-neutral-600 hover:text-white transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Unusable edge area around wafer perimeter</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <Input
                 id="edgeExclusion"
@@ -174,16 +201,16 @@ export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Label htmlFor="defectDensity" className="text-sm font-medium text-neutral-200">Defect Density D₀ (/cm²)</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 text-neutral-600 cursor-help hover:text-white transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Number of defects per square centimeter</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="cursor-help">
+                      <Info className="h-3.5 w-3.5 text-neutral-600 hover:text-white transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Number of defects per square centimeter</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <Input
                 id="defectDensity"
@@ -227,12 +254,12 @@ export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
 
           {/* Advanced Settings Content */}
           <div className={cn(
-            "grid gap-6 px-4 transition-all duration-500 ease-in-out origin-top",
+            "grid gap-4 sm:gap-6 px-4 transition-all duration-500 ease-in-out origin-top",
             showAdvanced ? "pb-6 opacity-100 max-h-[500px] translate-y-0" : "pb-0 opacity-0 max-h-0 -translate-y-4"
           )}>
             <Separator className="bg-white/[0.05]" />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-3">
                 <Label htmlFor="scribeLine" className="text-sm font-medium text-neutral-200">Scribe Line (µm)</Label>
                 <Input
@@ -261,16 +288,16 @@ export function CalculatorForm({ inputs, onInputChange }: CalculatorFormProps) {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Label htmlFor="yieldModel" className="text-sm font-medium text-neutral-200">Yield Model</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 text-neutral-600 cursor-help hover:text-white transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Mathematical model for yield calculation</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="cursor-help">
+                      <Info className="h-3.5 w-3.5 text-neutral-600 hover:text-white transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mathematical model for yield calculation</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <Select
                 value={inputs.yieldModel}

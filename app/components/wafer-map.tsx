@@ -3,7 +3,8 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalculatorInputs, CalculatorResults } from '../lib/types';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface WaferMapProps {
   inputs: CalculatorInputs;
@@ -32,9 +33,25 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
     const dieWidth = inputs.dieWidth;
     const dieHeight = inputs.dieHeight;
     
+    // Validate die dimensions to prevent freezing
+    if (dieWidth <= 0 || dieHeight <= 0 || !isFinite(dieWidth) || !isFinite(dieHeight)) {
+      return [];
+    }
+    
     // Calculate how many dies fit in each direction
     const diesX = Math.floor((inputs.waferDiameter) / dieWidth);
     const diesY = Math.floor((inputs.waferDiameter) / dieHeight);
+    
+    // Performance limit: prevent rendering if there are too many dies
+    // This prevents browser freezing with very small die sizes
+    const MAX_DIES_TO_RENDER = 5000;
+    const estimatedDies = diesX * diesY;
+    
+    if (estimatedDies > MAX_DIES_TO_RENDER) {
+      // Return empty array and let user know via UI
+      console.warn(`Too many dies to render: ${estimatedDies}. Maximum is ${MAX_DIES_TO_RENDER}. Increase die size.`);
+      return [];
+    }
     
     // Center the die grid
     const startX = -((diesX * dieWidth) / 2);
@@ -85,6 +102,15 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
   const defectiveDies = dies.filter(d => d.isUsable && d.isDefective).length;
   const edgeLossDies = dies.filter(d => !d.isUsable).length;
 
+  // Check if we're over the rendering limit
+  const dieWidth = inputs.dieWidth;
+  const dieHeight = inputs.dieHeight;
+  const diesX = dieWidth > 0 ? Math.floor(inputs.waferDiameter / dieWidth) : 0;
+  const diesY = dieHeight > 0 ? Math.floor(inputs.waferDiameter / dieHeight) : 0;
+  const estimatedDies = diesX * diesY;
+  const MAX_DIES_TO_RENDER = 5000;
+  const isTooManyDies = estimatedDies > MAX_DIES_TO_RENDER;
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex-none">
@@ -96,7 +122,7 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
           Visual distribution of functional and defective dies
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col items-center justify-center min-h-[400px] p-8">
+      <CardContent className="flex-1 flex flex-col items-center justify-center min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] p-4 sm:p-6 lg:p-8">
         <style jsx global>{`
           @keyframes dieAppear {
             from {
@@ -109,9 +135,36 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
             }
           }
         `}</style>
+        
+        {/* Warning for too many dies */}
+        {isTooManyDies && (
+          <div className="mb-6 p-4 rounded-lg bg-orange-500/10 border border-orange-500/30 backdrop-blur-sm max-w-md">
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 rounded-md bg-orange-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                  <path d="M12 9v4"/>
+                  <path d="M12 17h.01"/>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-orange-400 mb-1">Too Many Dies to Render</h4>
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Die size is too small ({dieWidth}mm × {dieHeight}mm = ~{estimatedDies.toLocaleString()} dies). 
+                  Increase die width or height to at least <strong className="text-orange-300">{Math.ceil(Math.sqrt((inputs.waferDiameter * inputs.waferDiameter) / MAX_DIES_TO_RENDER) * 10) / 10}mm</strong> to see the visualization.
+                  <span className="block mt-2 text-neutral-500">The calculations below are still accurate.</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="flex flex-col items-center w-full">
           {/* SVG Wafer */}
-          <div className="relative w-full max-w-[600px] aspect-square group">
+          <div className={cn(
+            "relative w-full max-w-[280px] sm:max-w-[400px] md:max-w-[500px] lg:max-w-[600px] aspect-square group",
+            isTooManyDies && "opacity-30 pointer-events-none"
+          )}>
 
             <svg
               viewBox={`${-viewBoxSize/2} ${-viewBoxSize/2} ${viewBoxSize} ${viewBoxSize}`}
@@ -206,8 +259,7 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
               </circle>
 
               {/* Dies */}
-              <TooltipProvider>
-                {dies.map((die, index) => {
+              {dies.map((die, index) => {
                   let fillColor = '#ef4444'; // Red for edge loss
                   let opacity = 0.3;
                   let shouldPulse = false;
@@ -271,7 +323,6 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
                     </Tooltip>
                   );
                 })}
-              </TooltipProvider>
 
               {/* Center marker */}
               <circle
@@ -285,8 +336,8 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
           </div>
 
           {/* Legend */}
-          <div className="mt-8 w-full max-w-md">
-            <div className="grid grid-cols-3 gap-4">
+          <div className="mt-6 sm:mt-8 w-full max-w-md">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-green-500 rounded border border-white/20" />
                 <div className="text-sm">
@@ -311,27 +362,27 @@ export function WaferMap({ inputs, results }: WaferMapProps) {
             </div>
 
             {/* Stats summary */}
-            <div className="mt-6 p-5 bg-gradient-to-br from-neutral-900/50 to-black/50 rounded-xl border border-white/[0.08] backdrop-blur-sm">
-              <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="mt-4 sm:mt-6 p-4 sm:p-5 bg-gradient-to-br from-neutral-900/50 to-black/50 rounded-xl border border-white/[0.08] backdrop-blur-sm">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6 text-sm">
                 <div className="space-y-1">
                   <p className="text-neutral-500 text-xs uppercase tracking-wider">Total Dies</p>
-                  <p className="text-2xl font-display font-semibold">{dies.length}</p>
+                  <p className="text-xl sm:text-2xl font-display font-semibold">{dies.length}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-neutral-500 text-xs uppercase tracking-wider">Yield Rate</p>
-                  <p className="text-2xl font-display font-semibold text-green-400">
+                  <p className="text-xl sm:text-2xl font-display font-semibold text-green-400">
                     {(results.yieldPercent * 100).toFixed(2)}%
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-neutral-500 text-xs uppercase tracking-wider">Usable Area</p>
-                  <p className="text-2xl font-display font-semibold">
+                  <p className="text-xl sm:text-2xl font-display font-semibold">
                     {((1 - edgeLossDies / dies.length) * 100).toFixed(1)}%
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-neutral-500 text-xs uppercase tracking-wider">Good Dies</p>
-                  <p className="text-2xl font-display font-semibold text-blue-400">{goodDies}</p>
+                  <p className="text-xl sm:text-2xl font-display font-semibold text-blue-400">{goodDies}</p>
                 </div>
               </div>
             </div>

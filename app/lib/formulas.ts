@@ -26,16 +26,38 @@ export function calculateGrossDies(waferDiameter: number, dieArea: number): numb
 }
 
 /**
- * Calculate usable dies with edge loss correction
- * Formula: gross_dies - (π * D) / sqrt(2 * die_area)
+ * Calculate usable dies with edge exclusion correction
+ * This accounts for the unusable edge area of the wafer
+ * Formula: Uses effective wafer diameter after edge exclusion
+ * 
+ * Method: Calculate dies that fit within the effective diameter
+ * and subtract edge loss correction
  */
 export function calculateUsableDies(
   waferDiameter: number,
   dieArea: number,
+  edgeExclusion: number,
   grossDies: number
 ): number {
-  const edgeLoss = (Math.PI * waferDiameter) / Math.sqrt(2 * dieArea);
-  return Math.max(0, Math.floor(grossDies - edgeLoss));
+  // Calculate effective wafer diameter after edge exclusion
+  const effectiveDiameter = waferDiameter - (2 * edgeExclusion);
+  
+  // If edge exclusion is too large, no usable area
+  if (effectiveDiameter <= 0) return 0;
+  
+  // Calculate effective wafer area
+  const effectiveArea = Math.PI * Math.pow(effectiveDiameter / 2, 2);
+  
+  // Calculate dies in effective area
+  const diesInEffectiveArea = Math.floor(effectiveArea / dieArea);
+  
+  // Apply edge loss correction for dies that partially fit
+  // This formula accounts for dies near the circular edge
+  const edgeLoss = (Math.PI * effectiveDiameter) / Math.sqrt(2 * dieArea);
+  
+  const usableDies = Math.floor(diesInEffectiveArea - edgeLoss);
+  
+  return Math.max(0, usableDies);
 }
 
 /**
@@ -104,7 +126,7 @@ export function calculateResults(inputs: CalculatorInputs): CalculatorResults {
 
   // Calculate dies
   const grossDies = calculateGrossDies(inputs.waferDiameter, dieAreaMm2);
-  const usableDies = calculateUsableDies(inputs.waferDiameter, dieAreaMm2, grossDies);
+  const usableDies = calculateUsableDies(inputs.waferDiameter, dieAreaMm2, inputs.edgeExclusion, grossDies);
 
   // Calculate yield
   const yieldPercent = calculateYield(inputs.yieldModel, inputs.defectDensity, dieAreaCm2);
