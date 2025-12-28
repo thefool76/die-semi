@@ -9,6 +9,39 @@ import { CalculatorInputs, CalculatorResults } from './lib/types';
 import { calculateResults } from './lib/formulas';
 import { Cpu } from 'lucide-react';
 
+// Structured data for SEO
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Die Yield Calculator",
+  "applicationCategory": "BusinessApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "description": "Professional semiconductor die yield calculator with Poisson, Murphy, and Bose-Einstein models for wafer yield analysis",
+  "operatingSystem": "Web Browser",
+  "author": {
+    "@type": "Person",
+    "name": "thefool76",
+    "url": "https://github.com/thefool76"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5",
+    "ratingCount": "1"
+  },
+  "featureList": [
+    "Multiple yield models (Poisson, Murphy, Bose-Einstein)",
+    "Support for 150mm, 200mm, and 300mm wafers",
+    "Real-time wafer map visualization",
+    "Defect density calculation",
+    "Edge exclusion support",
+    "Gross and net die calculation"
+  ]
+};
+
 export default function Home() {
   const [inputs, setInputs] = useState<CalculatorInputs>({
     waferDiameter: 300,
@@ -30,6 +63,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black relative overflow-hidden selection:bg-white/20">
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      
       {/* Background Grid */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" 
            style={{ 

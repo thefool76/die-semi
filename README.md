@@ -1,96 +1,104 @@
 # Die Yield Calculator
 
-A professional semiconductor die yield calculator built with Next.js and shadcn/ui. Calculate wafer yield, die counts, and functional dies based on industry-standard formulas.
+🎯 **Professional semiconductor die yield calculator** with multiple yield models for accurate wafer analysis.
 
-## Features
+## 🚀 Features
 
-- **Real-time Calculations**: Instant updates as you modify parameters
-- **Multiple Yield Models**: Poisson, Murphy, and Bose-Einstein models
-- **Advanced Settings**: Scribe line, reticle limits, and edge exclusion
-- **Beautiful UI**: Vercel-style black & white theme with smooth animations
-- **Mobile Responsive**: Works seamlessly on all devices
-- **Tooltips & Explanations**: Learn about semiconductor manufacturing concepts
+- ✅ **Multiple Yield Models**: Poisson, Murphy, and Bose-Einstein
+- ✅ **Wafer Sizes**: Support for 150mm, 200mm, and 300mm wafers
+- ✅ **Real-time Visualization**: Interactive wafer map showing functional and defective dies
+- ✅ **Accurate Calculations**: Industry-standard formulas for gross dies, usable dies, and yield
+- ✅ **Edge Exclusion**: Configurable edge exclusion zones
+- ✅ **Defect Density**: Calculate yield based on defect density (D₀)
+- ✅ **Responsive Design**: Works on desktop, tablet, and mobile
+- ✅ **Fast Performance**: Optimized with Next.js 14 and Tailwind CSS
 
-## Getting Started
+## 📊 Yield Models
 
-### Prerequisites
-
-- Node.js 18+ 
-- npm or yarn
-
-### Installation
-
-```bash
-npm install
+### Poisson Model (Default)
 ```
-
-### Development
-
-```bash
-npm run dev
+Y = e^(-D₀ × A)
 ```
+Assumes random defect distribution. Most commonly used in industry for mature processes.
 
-Open [http://localhost:3000](http://localhost:3000) to view the calculator.
-
-### Build
-
-```bash
-npm run build
-npm start
+### Murphy Model
 ```
+Y = [(1-e^(-D₀×A))/(D₀×A)]²
+```
+Accounts for defect clustering. More pessimistic than Poisson.
 
-## Usage
+### Bose-Einstein Model
+```
+Y = [1/(1+D₀×A)]²
+```
+Based on statistical physics. Most conservative estimate for highly clustered defects.
 
-1. **Wafer Diameter**: Select from standard sizes (150mm, 200mm, 300mm) or enter custom
-2. **Die Dimensions**: Enter die width and height in millimeters
-3. **Edge Exclusion**: Set the unusable edge area (default: 3mm)
-4. **Defect Density**: Enter defects per cm² (typical: 0.01-1.0)
-5. **Advanced Settings**: Configure scribe lines, reticle limits, and yield models
+## 🛠️ Tech Stack
 
-## Formulas
-
-### Wafer Area
-```
-A_wafer = π × (D/2)²
-```
-
-### Die Area
-```
-A_die = width × height
-```
-
-### Gross Dies Per Wafer
-```
-GDW = A_wafer / A_die
-```
-
-### Usable Dies (Edge Loss Correction)
-```
-Usable = GDW - (π × D) / √(2 × A_die)
-```
-
-### Poisson Yield Model
-```
-Y = e^(-D₀ × A_die_cm²)
-```
-
-### Net Functional Dies
-```
-Net = Usable × Yield
-```
-
-## Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **UI Library**: shadcn/ui
-- **Styling**: TailwindCSS
-- **Language**: TypeScript
+- **Framework**: Next.js 14 (React 18)
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui + Radix UI
 - **Icons**: Lucide React
+- **Language**: TypeScript
+- **Package Manager**: Bun
+- **Analytics**: Vercel Analytics & Speed Insights
 
-## License
+## 🎓 Key Formulas
 
-MIT
+- **Wafer Area**: `A = π × (D/2)²`
+- **Die Area**: `A = W × H`
+- **Gross Dies**: `GDW = ⌊A_wafer / A_die⌋`
+- **Usable Dies**: Accounts for edge exclusion and circular edge loss
+- **Net Functional Dies**: `N_net = ⌊Usable × Yield⌋`
 
-## Acknowledgments
+## 🚀 Getting Started
 
-Inspired by SemiAnalysis die yield calculator with industry-standard semiconductor formulas.
+```bash
+# Install dependencies
+bun install
+
+# Run development server
+bun run dev
+
+# Build for production
+bun run build
+
+# Start production server
+bun run start
+```
+
+Open [http://localhost:3000](http://localhost:3000) to see the calculator.
+
+## 📱 SEO Optimized
+
+- ✅ Comprehensive metadata (Open Graph, Twitter Cards)
+- ✅ Structured data (Schema.org JSON-LD)
+- ✅ Semantic HTML
+- ✅ Sitemap & robots.txt
+- ✅ Core Web Vitals optimized
+- ✅ Mobile-friendly
+- ✅ Fast loading times
+
+## 👨‍💻 Author
+
+**thefool76**
+- GitHub: [@thefool76](https://github.com/thefool76)
+
+## 📄 License
+
+MIT License - Feel free to use this calculator for your semiconductor analysis needs.
+
+## 🔗 Links
+
+- [Live Demo](https://die-semi.vercel.app)
+- [Documentation](https://die-semi.vercel.app)
+- [Wikipedia - Semiconductor Fabrication](https://en.wikipedia.org/wiki/Semiconductor_device_fabrication)
+- [Wikipedia - Defect Density](https://en.wikipedia.org/wiki/Defect_density)
+
+## 🌟 Keywords
+
+die yield calculator, semiconductor calculator, wafer yield, defect density, Poisson yield model, Murphy yield model, Bose-Einstein yield model, gross dies per wafer, semiconductor manufacturing, IC fabrication, chip yield, wafer calculator, die per wafer, edge exclusion, semiconductor analysis
+
+---
+
+Made with ❤️ for the semiconductor industry
